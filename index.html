@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pensioenuitkering Schema</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 2.2em;
+            font-weight: 300;
+        }
+        
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 25px;
+            border-radius: 12px;
+            border-left: 5px solid #3498db;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        
+        .card h3 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+            font-size: 1.1em;
+        }
+        
+        .card .value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #27ae60;
+            margin-bottom: 5px;
+        }
+        
+        .card .description {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 500px;
+            margin: 30px 0;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+        
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            margin-top: 30px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th {
+            background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 500;
+        }
+        
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        tr:hover {
+            background-color: #e3f2fd;
+        }
+        
+        .highlight {
+            background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%) !important;
+            border-left: 3px solid #27ae60;
+        }
+        
+        .warning {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%) !important;
+            border-left: 3px solid #f39c12;
+        }
+        
+        .amount {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .positive {
+            color: #27ae60;
+        }
+        
+        .age-milestone {
+            background: linear-gradient(135deg, #ddd6fe 0%, #e0e7ff 100%) !important;
+            border-left: 3px solid #8b5cf6;
+        }
+        
+        .input-section {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            border-left: 5px solid #3498db;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        
+        .input-section h3 {
+            margin: 0 0 20px 0;
+            color: #2c3e50;
+            font-size: 1.3em;
+        }
+        
+        .input-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .input-group label {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+        
+        .input-group input,
+        .input-group select {
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        
+        .input-group input:focus,
+        .input-group select:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+        
+        .input-group input:hover,
+        .input-group select:hover {
+            border-color: #bbb;
+        }
+        
+        .assumptions {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .assumptions h4 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+        }
+        
+        .assumptions ul {
+            margin: 10px 0;
+            color: #5a6c7d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Compleet Pensioen Inkomen Calculator</h1>
+            <p>Portfolio + Wettelijk Pensioen • Interactieve planner voor totaal inkomen</p>
+        </div>
+        
+        <div class="content">
+            <div class="input-section">
+                <h3>🎛️ Pas je parameters aan:</h3>
+                <div class="input-grid">
+                    <div class="input-group">
+                        <label for="startCapital">💰 Startkapitaal (€)</label>
+                        <input type="number" id="startCapital" value="500000" min="10000" step="1000">
+                    </div>
+                    <div class="input-group">
+                        <label for="withdrawalRate">📊 Withdrawal Rate (%)</label>
+                        <input type="number" id="withdrawalRate" value="3.7" min="1" max="10" step="0.1">
+                    </div>
+                    <div class="input-group">
+                        <label for="growthRate">📈 Jaarlijkse Groei (%)</label>
+                        <input type="number" id="growthRate" value="7" min="0" max="15" step="0.5">
+                    </div>
+                    <div class="input-group">
+                        <label for="legalPension">🏛️ Wettelijk Pensioen (€/maand)</label>
+                        <input type="number" id="legalPension" value="1200" min="0" max="3000" step="50">
+                    </div>
+                    <div class="input-group">
+                        <label for="withdrawalStrategy">📊 Withdrawal Strategie</label>
+                        <select id="withdrawalStrategy">
+                            <option value="fixed">Fixed (zelfde bedrag elk jaar)</option>
+                            <option value="dynamic">Dynamic (% van huidige waarde)</option>
+                            <option value="guardrails">Guardrails (flex tussen grenzen)</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="retirementAge">🎂 Pensioenleeftijd</label>
+                        <input type="number" id="retirementAge" value="67" min="55" max="75" step="1">
+                    </div>
+                </div>
+            </div>
+
+            <div class="summary-cards">
+                <div class="card">
+                    <h3>💰 Startkapitaal</h3>
+                    <div class="value" id="displayStartCapital">€500.000</div>
+                    <div class="description">Bij pensionering</div>
+                </div>
+                
+                <div class="card">
+                    <h3>📅 Portfolio Inkomen</h3>
+                    <div class="value" id="displayMonthlyPortfolio">€1.542</div>
+                    <div class="description">Gemiddeld per maand uit portfolio</div>
+                </div>
+                
+                <div class="card">
+                    <h3>🏛️ Wettelijk Pensioen</h3>
+                    <div class="value" id="displayLegalPension">€1.200</div>
+                    <div class="description">Per maand van de staat</div>
+                </div>
+                
+                <div class="card">
+                    <h3>💳 Totaal Inkomen</h3>
+                    <div class="value" id="displayTotalIncome">€2.742</div>
+                    <div class="description">Portfolio + Wettelijk pensioen</div>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="portfolioChart"></canvas>
+            </div>
+            
+            <div class="table-container">
+                <table id="pensionTable">
+                    <thead>
+                        <tr>
+                            <th>Jaar</th>
+                            <th>Leeftijd</th>
+                            <th>Portefeuille Begin</th>
+                            <th>Afroming</th>
+                            <th>Groei (7%)</th>
+                            <th>Portefeuille Eind</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pensionTableBody">
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="assumptions">
+                <h4>📋 Withdrawal Strategieën uitgelegd:</h4>
+                <ul>
+                    <li><strong>Fixed Strategy:</strong> Trek elk jaar hetzelfde bedrag af (3,7% van startkapitaal). Voorspelbaar inkomen, maar je profiteert niet van portfoliogroei.</li>
+                    <li><strong>Dynamic Strategy:</strong> Trek elk jaar een percentage van je huidige portfoliowaarde af. Hoger inkomen bij groei, maar meer volatiliteit.</li>
+                    <li><strong>Guardrails Strategy:</strong> Combinatie van beide - flexibel tussen 80% en 120% van je oorspronkelijke withdrawal. Balans tussen stabiliteit en flexibiliteit.</li>
+                </ul>
+                
+                <h4>🧮 Andere factoren:</h4>
+                <ul>
+                    <li><strong>Withdrawal Rate:</strong> Voor Fixed = % van startkapitaal. Voor Dynamic/Guardrails = % van huidige portfoliowaarde</li>
+                    <li><strong>Safe rates:</strong> Fixed 3,7%, Dynamic/Guardrails kunnen hoger (4-5%) door aanpassingsmogelijkheid</li>
+                    <li><strong>Belasting België:</strong> 0% tot 2026, dan 10% op winsten boven €10.000/jaar</li>
+                    <li><strong>Marktvolatiliteit:</strong> Groeipercentage is gemiddelde - echte jaren variëren van -20% tot +25%</li>
+                    <li><strong>Inflatie:</strong> Niet meegenomen - in werkelijkheid moet je afromingen indexeren</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let chart;
+        
+        // Functie om data te berekenen
+        function calculatePensionData() {
+            const startCapital = parseFloat(document.getElementById('startCapital').value);
+            const withdrawalRate = parseFloat(document.getElementById('withdrawalRate').value) / 100;
+            const growthRate = parseFloat(document.getElementById('growthRate').value) / 100;
+            const retirementAge = parseInt(document.getElementById('retirementAge').value);
+            const strategy = document.getElementById('withdrawalStrategy').value;
+            
+            const data = [];
+            let portfolio = startCapital;
+            let baseWithdrawal = startCapital * withdrawalRate;
+            let totalWithdrawn = 0;
+            
+            // Bereken voor 28 jaar (tot 95)
+            const yearsToCalculate = 95 - retirementAge;
+            
+            for (let year = 0; year < yearsToCalculate; year++) {
+                const currentYear = 2053 + year;
+                const age = retirementAge + year;
+                const startPortfolio = portfolio;
+                
+                let withdrawal;
+                
+                // Bepaal withdrawal gebaseerd op strategie
+                switch (strategy) {
+                    case 'fixed':
+                        // Fixed: zelfde bedrag elk jaar (alleen inflatie, maar dat laten we weg voor eenvoud)
+                        withdrawal = baseWithdrawal;
+                        break;
+                        
+                    case 'dynamic':
+                        // Dynamic: percentage van huidige portfoliowaarde
+                        withdrawal = portfolio * withdrawalRate;
+                        break;
+                        
+                    case 'guardrails':
+                        // Guardrails: tussen 80% en 120% van originele withdrawal
+                        const minWithdrawal = baseWithdrawal * 0.8;
+                        const maxWithdrawal = baseWithdrawal * 1.2;
+                        const dynamicWithdrawal = portfolio * withdrawalRate;
+                        withdrawal = Math.max(minWithdrawal, Math.min(maxWithdrawal, dynamicWithdrawal));
+                        break;
+                }
+                
+                // Zorg dat we niet meer afromen dan we hebben
+                withdrawal = Math.min(withdrawal, portfolio * 0.95);
+                
+                // Trek afroming af
+                portfolio -= withdrawal;
+                totalWithdrawn += withdrawal;
+                
+                // Voeg groei toe
+                const growth = portfolio * growthRate;
+                portfolio += growth;
+                
+                let status = "✅ Gezond";
+                let rowClass = "";
+                
+                if (age === 75) {
+                    status = "🎂 75 jaar";
+                    rowClass = "age-milestone";
+                } else if (age === 80) {
+                    status = "🎂 80 jaar";
+                    rowClass = "age-milestone";
+                } else if (age === 85) {
+                    status = "🎂 85 jaar";
+                    rowClass = "age-milestone";
+                } else if (age === 90) {
+                    status = "🎂 90 jaar";
+                    rowClass = "age-milestone";
+                } else if (portfolio < startCapital * 0.2) {
+                    status = "⚠️ Laag saldo";
+                    rowClass = "warning";
+                } else if (portfolio > startCapital * 1.5) {
+                    status = "🚀 Sterke groei";
+                    rowClass = "highlight";
+                }
+                
+                data.push({
+                    year: currentYear,
+                    age: age,
+                    startPortfolio: startPortfolio,
+                    withdrawal: withdrawal,
+                    growth: growth,
+                    endPortfolio: portfolio,
+                    status: status,
+                    rowClass: rowClass
+                });
+            }
+            
+            return {
+                data: data,
+                averageWithdrawal: totalWithdrawn / yearsToCalculate,
+                totalWithdrawn: totalWithdrawn,
+                finalValue: portfolio,
+                monthlyIncome: (totalWithdrawn / yearsToCalculate) / 12,
+                strategy: strategy
+            };
+        }
+        
+        // Functie om alles bij te werken
+        function updateDisplay() {
+            const result = calculatePensionData();
+            const legalPension = parseFloat(document.getElementById('legalPension').value);
+            
+            // Update summary cards
+            document.getElementById('displayStartCapital').textContent = 
+                '€' + parseFloat(document.getElementById('startCapital').value).toLocaleString();
+            document.getElementById('displayMonthlyPortfolio').textContent = 
+                '€' + Math.round(result.monthlyIncome).toLocaleString();
+            document.getElementById('displayLegalPension').textContent = 
+                '€' + legalPension.toLocaleString();
+            document.getElementById('displayTotalIncome').textContent = 
+                '€' + Math.round(result.monthlyIncome + legalPension).toLocaleString();
+            
+            // Update strategy description based on selected strategy
+            const strategyDescriptions = {
+                'fixed': 'Vast bedrag uit portfolio',
+                'dynamic': 'Variabel bedrag uit portfolio', 
+                'guardrails': 'Flexibel bedrag uit portfolio'
+            };
+            
+            document.querySelector('#displayMonthlyPortfolio').nextElementSibling.textContent = 
+                strategyDescriptions[result.strategy];
+            
+            // Update tabel
+            updateTable(result.data, legalPension);
+            
+            // Update grafiek
+            updateChart(result.data, legalPension);
+        }
+        
+        // Functie om tabel bij te werken
+        function updateTable(data, legalPension) {
+            const tableBody = document.getElementById('pensionTableBody');
+            tableBody.innerHTML = '';
+            
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                if (row.rowClass) tr.className = row.rowClass;
+                
+                const monthlyPortfolio = Math.round(row.withdrawal / 12);
+                const monthlyTotal = monthlyPortfolio + legalPension;
+                
+                tr.innerHTML = `
+                    <td><strong>${row.year}</strong></td>
+                    <td><strong>${row.age}</strong></td>
+                    <td class="amount">€${Math.round(row.startPortfolio).toLocaleString()}</td>
+                    <td class="amount" style="color: #e74c3c;">-€${Math.round(row.withdrawal).toLocaleString()}</td>
+                    <td class="amount positive">+€${Math.round(row.growth).toLocaleString()}</td>
+                    <td class="amount"><strong>€${Math.round(row.endPortfolio).toLocaleString()}</strong></td>
+                    <td>${row.status}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+        
+        // Functie om grafiek bij te werken
+        function updateChart(data, legalPension) {
+            if (chart) {
+                chart.destroy();
+            }
+            
+            // Check of withdrawal bedragen variëren (voor dynamic/guardrails)
+            const withdrawals = data.map(d => Math.round(d.withdrawal));
+            const isVariableWithdrawal = withdrawals.some(w => Math.abs(w - withdrawals[0]) > 100);
+            
+            // Bereken maandelijks totaal inkomen
+            const monthlyTotal = data.map(d => Math.round(d.withdrawal / 12) + legalPension);
+            const monthlyPortfolio = data.map(d => Math.round(d.withdrawal / 12));
+            
+            const ctx = document.getElementById('portfolioChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(d => d.age),
+                    datasets: [{
+                        label: 'Portefeuille Waarde',
+                        data: data.map(d => Math.round(d.endPortfolio)),
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        yAxisID: 'y'
+                    }, {
+                        label: 'Totaal Maandelijks Inkomen',
+                        data: monthlyTotal,
+                        borderColor: '#27ae60',
+                        backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                        borderWidth: 3,
+                        fill: false,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#27ae60',
+                        yAxisID: 'y1'
+                    }, {
+                        label: 'Portfolio Deel (maandelijks)',
+                        data: monthlyPortfolio,
+                        borderColor: '#e74c3c',
+                        backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                        borderWidth: isVariableWithdrawal ? 3 : 2,
+                        borderDash: isVariableWithdrawal ? [] : [5, 5],
+                        fill: false,
+                        pointRadius: isVariableWithdrawal ? 2 : 1,
+                        pointBackgroundColor: '#e74c3c',
+                        yAxisID: 'y1'
+                    }, {
+                        label: 'Wettelijk Pensioen (maandelijks)',
+                        data: data.map(() => legalPension),
+                        borderColor: '#9b59b6',
+                        backgroundColor: 'rgba(155, 89, 182, 0.1)',
+                        borderWidth: 2,
+                        borderDash: [10, 5],
+                        fill: false,
+                        pointRadius: 0,
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Portefeuille Evolutie & Inkomen tijdens Pensioen',
+                            font: {
+                                size: 16,
+                                weight: 'bold'
+                            }
+                        },
+                        legend: {
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                afterLabel: function(context) {
+                                    if (context.datasetIndex === 1) {
+                                        const dataPoint = data[context.dataIndex];
+                                        const portfolioPart = Math.round(dataPoint.withdrawal / 12);
+                                        return [
+                                            `Portfolio deel: €${portfolioPart.toLocaleString()}`,
+                                            `Wettelijk pensioen: €${legalPension.toLocaleString()}`
+                                        ];
+                                    }
+                                    return '';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '€' + value.toLocaleString();
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Portefeuille Waarde (€)',
+                                color: '#3498db'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            beginAtZero: true,
+                            grid: {
+                                drawOnChartArea: false
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return '€' + value.toLocaleString();
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Maandelijks Inkomen (€)',
+                                color: '#27ae60'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Leeftijd'
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    }
+                }
+            });
+        }
+        
+        // Event listeners toevoegen
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initial display
+            updateDisplay();
+            
+            // Add event listeners to all inputs
+            document.getElementById('startCapital').addEventListener('input', updateDisplay);
+            document.getElementById('withdrawalRate').addEventListener('input', updateDisplay);
+            document.getElementById('growthRate').addEventListener('input', updateDisplay);
+            document.getElementById('retirementAge').addEventListener('input', updateDisplay);
+            document.getElementById('withdrawalStrategy').addEventListener('change', updateDisplay);
+            document.getElementById('legalPension').addEventListener('input', updateDisplay);
+        });
+    </script>
+</body>
+</html>
